@@ -1,29 +1,145 @@
 import * as React from 'react';
 import { RouteComponentProps } from 'react-router';
+import { Component } from 'react';
+import './site.css';
 
-export class Home extends React.Component<RouteComponentProps<{}>, {}> {
-    public render() {
-        return <div>
-            <h1>Hello, world!</h1>
-            <p>Welcome to your new single-page application, built with:</p>
-            <ul>
-                <li><a href='https://get.asp.net/'>ASP.NET Core</a> and <a href='https://msdn.microsoft.com/en-us/library/67ef8sbd.aspx'>C#</a> for cross-platform server-side code</li>
-                <li><a href='https://facebook.github.io/react/'>React</a> and <a href='http://www.typescriptlang.org/'>TypeScript</a> for client-side code</li>
-                <li><a href='https://webpack.github.io/'>Webpack</a> for building and bundling client-side resources</li>
-                <li><a href='http://getbootstrap.com/'>Bootstrap</a> for layout and styling</li>
-            </ul>
-            <p>To help you get started, we've also set up:</p>
-            <ul>
-                <li><strong>Client-side navigation</strong>. For example, click <em>Counter</em> then <em>Back</em> to return here.</li>
-                <li><strong>Webpack dev middleware</strong>. In development mode, there's no need to run the <code>webpack</code> build tool. Your client-side resources are dynamically built on demand. Updates are available as soon as you modify any file.</li>
-                <li><strong>Hot module replacement</strong>. In development mode, you don't even need to reload the page after making most changes. Within seconds of saving changes to files, rebuilt React components will be injected directly into your running application, preserving its live state.</li>
-                <li><strong>Efficient production builds</strong>. In production mode, development-time features are disabled, and the <code>webpack</code> build tool produces minified static CSS and JavaScript files.</li>
-            </ul>
-            <h4>Going further</h4>
-            <p>
-                For larger applications, or for server-side prerendering (i.e., for <em>isomorphic</em> or <em>universal</em> applications), you should consider using a Flux/Redux-like architecture.
-                You can generate an ASP.NET Core application with React and Redux using <code>dotnet new reactredux</code> instead of using this template.
-            </p>
-        </div>;
+export class Home extends Component<RouteComponentProps<{}>, {}> {
+    constructor(props: RouteComponentProps<{}>) {
+        super(props);
+        this.state = {
+            newText: ' ',
+            allWords: [],
+            femWordCount: 0,
+            maleWordCount: 0,
+            feminineTargetedWords: [],
+            maleTargetedWords: []
+        };
+        this.findBias = this.findBias.bind(this);
+        this.placeCaretAtEnd = this.placeCaretAtEnd.bind(this);
+        this.setText = this.setText.bind(this);
+        this.colourSet = this.colourSet.bind(this);
+        this.countMatchingWords = this.countMatchingWords.bind(this);
+    }
+
+    componentDidMount() {
+
+        let feminineTargetedWords: [
+            'our team', 'contribute', 'interpersonal', 'caring', 'encourage', 'family', 'families', 'helpful',
+            'sincere', 'interpersonal skills', 'meaningful', 'collaborative', 'empathy', 'kindness',
+            'passion for making', 'balancing', 'take care of', 'supportive', 'a sincere', 'catalyst', 'be comfortable',
+            'affectionate', 'child', 'children', 'cheer', 'cheerful', 'commitment', 'commit', 'communal', 'compassion',
+            'compassionate', 'connection', 'connect', 'considerate', 'cooperative', 'cooperate', 'depend', 'emotional',,
+            'empathetic', 'empathy', 'feminine', 'flatterable', 'gentle', 'honest', 'interperonal', 'kindess',
+            'kinship', 'loyalty', 'loyal', 'modesty', 'nag', 'nuture', 'pleasant', 'polite', 'quiet', 'responsible',
+            'responsive', 'sensitive', 'submissive', 'support', 'sympathy', 'tender', 'together', 'trust', 'understand',
+            'warm', 'whine', 'yield'
+        ];
+
+        let maleTargetedWords: [
+            'enforced', 'superior', 'phenomenal', 'unrivalled', 'tackle', 'drive', 'exceptional',
+            'experts', 'relationships managing command', 'manage', 'under pressure', 'proven', 'competitive', 'enforce',
+            'outstanding', 'extraordinary', 'manage relationships', 'managing', 'best in class', 'proven track record',
+            'command respect', 'strong track record', 'expert', 'aggressively', 'best-in-class', 'owning the', 'active',
+            'adventurous', 'aggressive', 'ambitious', 'analytical', 'assertive', 'athletic', 'autonomous', 'boastful',
+            'boast', 'challenging', 'challenge', 'competitive', 'confident', 'courageous', 'decide', 'decisive',
+            'decision', 'determine', 'dominant', 'dominace', 'forceful', 'force', 'greedy', 'headstrong',
+            'heierarchical', 'heierarchy', 'hostility', 'hostile', 'impulsive', 'independent', 'individual',
+            'intellectual', 'intellect', 'lead', 'logic', 'masculine', 'objective', 'opinion', 'outspoken', 'persist',
+            'principle', 'reckless', 'stubborn', 'superior', 'self-confident', 'self-sufficient', 'self-reliant'
+        ];
+
+        const allWords = [...feminineTargetedWords, ...maleTargetedWords];
+        this.setState({maleTargetedWords, feminineTargetedWords, allWords});
+    }
+
+    findBias() {
+        const words = document.getElementById('div').textContent;
+        if(words === '') {
+            this.setState({femWordCount: 0, maleWordCount: 0});
+        }
+        const allSetofWords = this.state.allWords;
+        const regexp = new RegExp(`\\b(${allSetofWords.join('|')})\\b`, 'gi');
+        const result = words.replace(regexp, (x) => {
+            return '<span class=' + this.colourSet(x) + `>${x}</span>`;
+        });
+        this.setState({newText: result}, () => {
+            this.setText();
+        });
+    }
+
+    colourSet(match: any) {
+        let femMatch = false;
+        let maleMatch = false;
+        if (this.state.endpoint.feminineTargetedWords.includes(match)) {
+            femMatch = true;
+            this.countMatchingWords(femMatch, maleMatch);
+            return 'femWord';
+        }
+        if (this.state.endpoint.maleTargetedWords.includes(match)) {
+            maleMatch = true;
+            this.countMatchingWords(femMatch, maleMatch);
+            return 'maleWord';
+        }
+        return 'border:none;';
+    }
+
+    setText() {
+        if(this.state.newText !== null) {
+            document.getElementById('div').innerHTML = this.state.newText;
+            this.placeCaretAtEnd(document.getElementById('div'));
+        }
+        console.log('hellooooo')
+    }
+
+    placeCaretAtEnd(el) {
+        el.focus();
+        if (typeof window.getSelection !== 'undefined' && typeof document.createRange !== 'undefined') {
+            const range = document.createRange();
+            range.selectNodeContents(el);
+            range.collapse(false);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        } else if (typeof document.body.createTextRange !== 'undefined') {
+            const textRange = document.body.createTextRange();
+            textRange.moveToElementText(el);
+            textRange.collapse(false);
+            textRange.select();
+        }
+    }
+
+    countMatchingWords(femMatch, maleMatch) {
+        const text = this.state.newText;
+        if(femMatch) {
+            const femWords = this.state.endpoint.feminineTargetedWords;
+            const femRegexp = new RegExp(`\\b(${femWords.join('|')})\\b`, 'gi');
+            let femResult = text.match(femRegexp, 'gi');
+            if(femResult !== null) {
+                const femWordCount = femResult.length;
+                this.setState({femWordCount});
+            }
+        }else if(maleMatch) {
+            const maleWords = this.state.endpoint.maleTargetedWords;
+            const maleRegexp = new RegExp(`\\b(${maleWords.join('|')})\\b`, 'gi');
+            let maleResult = text.match(maleRegexp, 'gi');
+            if(maleResult !== null) {
+                const maleWordCount = maleResult.length;
+                this.setState({maleWordCount});
+            }
+        }
+    }
+
+    render() {
+        return (
+            <div>
+                <h1 className="headingTitle">Bias Highlighter</h1>
+                <p className="taglin">Enter your job posting below to view any words that may be biased towards male or female applicants. Including biased words in your job positing will lead to less overall applicants. To ensure a less biased job posting, aim to have no words with implicit bias, or the equal amount of both female and male gendered words.</p>
+                <div className="counterContainer">
+                    <div className="femCounter">{this.state.femWordCount}</div>
+                    <div className="maleCounter">{this.state.maleWordCount}</div>
+                </div>
+                <div className="userTextContent" contentEditable={true} id="div" onKeyUp={this.findBias} />
+            </div>
+        );
     }
 }

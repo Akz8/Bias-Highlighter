@@ -59,7 +59,7 @@
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "6d7f02b5a3c324c8ac16"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "3f0c363d884faea91789"; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentParents = []; // eslint-disable-line no-unused-vars
@@ -7899,63 +7899,115 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 
+
 var Home = (function (_super) {
     __extends(Home, _super);
-    function Home() {
-        return _super !== null && _super.apply(this, arguments) || this;
+    function Home(props) {
+        var _this = _super.call(this, props) || this;
+        _this.state = {
+            newText: ' ',
+            allWords: [],
+            femWordCount: 0,
+            maleWordCount: 0
+        };
+        _this.findBias = _this.findBias.bind(_this);
+        _this.placeCaretAtEnd = _this.placeCaretAtEnd.bind(_this);
+        _this.setText = _this.setText.bind(_this);
+        _this.colourSet = _this.colourSet.bind(_this);
+        _this.countMatchingWords = _this.countMatchingWords.bind(_this);
+        return _this;
     }
+    Home.prototype.componentDidMount = function () {
+        var endpoint = {
+            feminineTargetedWords: ['our team', 'contribute', 'interpersonal', 'caring', 'encourage', 'family', 'families', 'helpful', 'sincere', 'interpersonal skills', 'meaningful', 'collaborative', 'empathy', 'kindness', 'passion for making', 'balancing', 'take care of', 'supportive', 'a sincere', 'catalyst', 'be comfortable', 'affectionate', 'child', 'children', 'cheer', 'cheerful', 'commitment', 'commit', 'communal', 'compassion', 'compassionate', 'connection', 'connect', 'considerate', 'cooperative', 'cooperate', 'depend', 'emotional', , 'empathetic', 'empathy', 'feminine', 'flatterable', 'gentle', 'honest', 'interperonal', 'kindess', 'kinship', 'loyalty', 'loyal', 'modesty', 'nag', 'nuture', 'pleasant', 'polite', 'quiet', 'responsible', 'responsive', 'sensitive', 'submissive', 'support', 'sympathy', 'tender', 'together', 'trust', 'understand', 'warm', 'whine', 'yield'],
+            maleTargetedWords: ['enforced', 'superior', 'phenomenal', 'unrivalled', 'tackle', 'drive', 'exceptional', 'experts', 'relationships managing command', 'manage', 'under pressure', 'proven', 'competitive', 'enforce', 'outstanding', 'extraordinary', 'manage relationships', 'managing', 'best in class', 'proven track record', 'command respect', 'strong track record', 'expert', 'aggressively', 'best-in-class', 'owning the', 'active', 'adventurous', 'aggressive', 'ambitious', 'analytical', 'assertive', 'athletic', 'autonomous', 'boastful', 'boast', 'challenging', 'challenge', 'competitive', 'confident', 'courageous', 'decide', 'decisive', 'decision', 'determine', 'dominant', 'dominace', 'forceful', 'force', 'greedy', 'headstrong', 'heierarchical', 'heierarchy', 'hostility', 'hostile', 'impulsive', 'independent', 'individual', 'intellectual', 'intellect', 'lead', 'logic', 'masculine', 'objective', 'opinion', 'outspoken', 'persist', 'principle', 'reckless', 'stubborn', 'superior', 'self-confident', 'self-sufficient', 'self-reliant']
+        };
+        var allWords = endpoint.maleTargetedWords.concat(endpoint.feminineTargetedWords);
+        this.setState({ endpoint: endpoint, allWords: allWords });
+    };
+    Home.prototype.findBias = function () {
+        var _this = this;
+        var words = document.getElementById('div').textContent;
+        if (words === '') {
+            this.setState({ femWordCount: 0, maleWordCount: 0 });
+        }
+        var allSetofWords = this.state.allWords;
+        var regexp = new RegExp("\\b(" + allSetofWords.join('|') + ")\\b", 'gi');
+        var result = words.replace(regexp, function (x) {
+            return '<span class=' + _this.colourSet(x) + (">" + x + "</span>");
+        });
+        this.setState({ newText: result }, function () {
+            _this.setText();
+        });
+    };
+    Home.prototype.colourSet = function (match) {
+        var femMatch = false;
+        var maleMatch = false;
+        if (this.state.endpoint.feminineTargetedWords.includes(match)) {
+            femMatch = true;
+            this.countMatchingWords(femMatch, maleMatch);
+            return 'femWord';
+        }
+        if (this.state.endpoint.maleTargetedWords.includes(match)) {
+            maleMatch = true;
+            this.countMatchingWords(femMatch, maleMatch);
+            return 'maleWord';
+        }
+        return 'border:none;';
+    };
+    Home.prototype.setText = function () {
+        if (this.state.newText !== null) {
+            document.getElementById('div').innerHTML = this.state.newText;
+            this.placeCaretAtEnd(document.getElementById('div'));
+        }
+        console.log('hellooooo');
+    };
+    Home.prototype.placeCaretAtEnd = function (el) {
+        el.focus();
+        if (typeof window.getSelection !== 'undefined' && typeof document.createRange !== 'undefined') {
+            var range = document.createRange();
+            range.selectNodeContents(el);
+            range.collapse(false);
+            var sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+        else if (typeof document.body.createTextRange !== 'undefined') {
+            var textRange = document.body.createTextRange();
+            textRange.moveToElementText(el);
+            textRange.collapse(false);
+            textRange.select();
+        }
+    };
+    Home.prototype.countMatchingWords = function (femMatch, maleMatch) {
+        var text = this.state.newText;
+        if (femMatch) {
+            var femWords = this.state.endpoint.feminineTargetedWords;
+            var femRegexp = new RegExp("\\b(" + femWords.join('|') + ")\\b", 'gi');
+            var femResult = text.match(femRegexp, 'gi');
+            if (femResult !== null) {
+                var femWordCount = femResult.length;
+                this.setState({ femWordCount: femWordCount });
+            }
+        }
+        else if (maleMatch) {
+            var maleWords = this.state.endpoint.maleTargetedWords;
+            var maleRegexp = new RegExp("\\b(" + maleWords.join('|') + ")\\b", 'gi');
+            var maleResult = text.match(maleRegexp, 'gi');
+            if (maleResult !== null) {
+                var maleWordCount = maleResult.length;
+                this.setState({ maleWordCount: maleWordCount });
+            }
+        }
+    };
     Home.prototype.render = function () {
-        return __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("div", null,
-            __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("h1", null, "Hello, world!"),
-            __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("p", null, "Welcome to your new single-page application, built with:"),
-            __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("ul", null,
-                __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("li", null,
-                    __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("a", { href: 'https://get.asp.net/' }, "ASP.NET Core"),
-                    " and ",
-                    __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("a", { href: 'https://msdn.microsoft.com/en-us/library/67ef8sbd.aspx' }, "C#"),
-                    " for cross-platform server-side code"),
-                __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("li", null,
-                    __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("a", { href: 'https://facebook.github.io/react/' }, "React"),
-                    " and ",
-                    __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("a", { href: 'http://www.typescriptlang.org/' }, "TypeScript"),
-                    " for client-side code"),
-                __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("li", null,
-                    __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("a", { href: 'https://webpack.github.io/' }, "Webpack"),
-                    " for building and bundling client-side resources"),
-                __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("li", null,
-                    __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("a", { href: 'http://getbootstrap.com/' }, "Bootstrap"),
-                    " for layout and styling")),
-            __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("p", null, "To help you get started, we've also set up:"),
-            __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("ul", null,
-                __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("li", null,
-                    __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("strong", null, "Client-side navigation"),
-                    ". For example, click ",
-                    __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("em", null, "Counter"),
-                    " then ",
-                    __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("em", null, "Back"),
-                    " to return here."),
-                __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("li", null,
-                    __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("strong", null, "Webpack dev middleware"),
-                    ". In development mode, there's no need to run the ",
-                    __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("code", null, "webpack"),
-                    " build tool. Your client-side resources are dynamically built on demand. Updates are available as soon as you modify any file."),
-                __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("li", null,
-                    __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("strong", null, "Hot module replacement"),
-                    ". In development mode, you don't even need to reload the page after making most changes. Within seconds of saving changes to files, rebuilt React components will be injected directly into your running application, preserving its live state."),
-                __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("li", null,
-                    __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("strong", null, "Efficient production builds"),
-                    ". In production mode, development-time features are disabled, and the ",
-                    __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("code", null, "webpack"),
-                    " build tool produces minified static CSS and JavaScript files.")),
-            __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("h4", null, "Going further"),
-            __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("p", null,
-                "For larger applications, or for server-side prerendering (i.e., for ",
-                __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("em", null, "isomorphic"),
-                " or ",
-                __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("em", null, "universal"),
-                " applications), you should consider using a Flux/Redux-like architecture. You can generate an ASP.NET Core application with React and Redux using ",
-                __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("code", null, "dotnet new reactredux"),
-                " instead of using this template."));
+        return (__WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("div", null,
+            __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("h1", { className: "headingTitle" }, "Bias Highlighter"),
+            __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("p", { className: "taglin" }, "Enter your job posting below to view any words that may be biased towards male or female applicants. Including biased words in your job positing will lead to less overall applicants. To ensure a less biased job posting, aim to have no words with implicit bias, or the equal amount of both female and male gendered words."),
+            __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("div", { className: "counterContainer" },
+                __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("div", { className: "femCounter" }, this.state.femWordCount),
+                __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("div", { className: "maleCounter" }, this.state.maleWordCount)),
+            __WEBPACK_IMPORTED_MODULE_0_react__["createElement"]("div", { className: "userTextContent", onKeyUp: this.findBias, id: "div", contentEditable: "true" })));
     };
     return Home;
 }(__WEBPACK_IMPORTED_MODULE_0_react__["Component"]));
